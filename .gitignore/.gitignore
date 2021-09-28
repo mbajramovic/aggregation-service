@@ -1,0 +1,16 @@
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Eclipse/mvn
+
+bin/
+target/
+.settings
+.classpath
+.metadata
+.cache
+Servers/
