@@ -9,7 +9,7 @@ Kafka 3.0.0
 
 ### Installing
 
-Project can be imported to some IDE (e.g. IntelliJ) and easily run using `Service` class as main class, or using sbt from command line:
+Project can be imported to some IDE (e.g. IntelliJ) and easily run using `Service` class as main class, or using sbt from command line (navigate to `aggregation-service-client`):
 
 ```
 sbt "run --conf-file="path/to/the/application.conf""
