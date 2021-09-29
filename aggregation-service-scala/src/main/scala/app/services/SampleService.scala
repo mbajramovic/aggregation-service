@@ -8,7 +8,6 @@ import app.models.enumerations.VehicleStatus.VehicleStatus
 import app.models.{TelemetrySample, VehicleStats}
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * The Sample Service class. Used for samples management.
@@ -21,14 +20,14 @@ object SampleService {
 
   private var samples: ListBuffer[TelemetrySample] = ListBuffer[TelemetrySample]()
 
-  def add(telemetrySample: TelemetrySample) : Future[TelemetrySample] = Future {
+  def add(telemetrySample: TelemetrySample) : TelemetrySample = {
     if (telemetrySample.validate()) {
       samples += telemetrySample
       telemetrySample
     } else {
       throw InvalidDataException("Telemetry validation failed.")
     }
-  }(ExecutionContext.global)
+  }
 
   def aggregateData(vehicleId: String) : Option[VehicleStats] = {
     val data = samples.filter(sample => sample.getVehicleId == vehicleId)
@@ -54,13 +53,13 @@ object SampleService {
 
   private def calculateAverageSpeed(data: ListBuffer[TelemetrySample]) : Double = {
     val lastSample = data
-      .findLast(sample => sample.getSignalValues.getOdometer >= 0 && sample.getSignalValues.getDrivingTime >= 0)
+      .filter(sample => sample.getSignalValues.getOdometer >= 0 && sample.getSignalValues.getDrivingTime >= 0)
+      .maxBy(_.recordedAt)
 
-    if (lastSample.isDefined) {
-      val sample = lastSample.get
-      val drivingTime = TimeUnit.MILLISECONDS.toHours(sample.getSignalValues.getDrivingTime.toLong)
+    if (lastSample != null) {
+      val drivingTime = TimeUnit.MILLISECONDS.toHours(lastSample.getSignalValues.getDrivingTime.toLong)
       if (drivingTime > 0) {
-        sample.getSignalValues.getOdometer / drivingTime
+        lastSample.getSignalValues.getOdometer / drivingTime
       } else {
         defaultSpeed
       }
@@ -81,7 +80,7 @@ object SampleService {
   }
 
   private def getLastMessageTimestamp(data: ListBuffer[TelemetrySample]): Long = {
-    val lastSample = data(data.length - 1)
+    val lastSample = data.maxBy(_.recordedAt)
     lastSample.getRecordedAt
   }
 
@@ -100,7 +99,7 @@ object SampleService {
   }
 
   private def getVehicleStatus(data: ListBuffer[TelemetrySample]): VehicleStatus = {
-    val lastSample = data(data.length - 1)
+    val lastSample = data.maxBy(_.recordedAt)
 
     if (lastSample.getSignalValues.getCurrentSpeed > 0) {
       VehicleStatus.DRIVING
